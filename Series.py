@@ -11,34 +11,36 @@ driver = Selenium.get_driver()
 wait = Selenium.get_wait(driver)
 actions = Selenium.get_actions(driver)
 
+load_dotenv()
+serie_insert_url = os.getenv('SERIE_INSERT_URL')
+
 def platform_login():
-    
-    load_dotenv()
-    
-    base_url = 'http://localhost:8000/'
     
     driver.execute_script("window.open('');")
     driver.switch_to.window(driver.window_handles[1])
-    driver.get(f'{base_url}series/insert')
+    driver.get(serie_insert_url)
     
-    wait.until(clickable((By.ID, 'email'))).send_keys(os.getenv('EMAIL'))
-    wait.until(clickable((By.ID, 'password'))).send_keys(os.getenv('PASSWORD'))
+    user_email = os.getenv('EMAIL')
+    user_password = os.getenv('PASSWORD')
+    
+    wait.until(clickable((By.ID, 'email'))).send_keys(user_email)
+    wait.until(clickable((By.ID, 'password'))).send_keys(user_password)
     wait.until(clickable((By.CLASS_NAME, 'btn'))).click()
 
-def get_seasons(serie, serie_code):
+def get_seasons(serie_code):
     
-    driver.get(f'https://www.imdb.com/title/{serie_code}/episodes')
+    driver.get(f'https://www.imdb.com/title/' + serie_code + '/episodes')
     
     season = wait.until(located((By.ID, 'bySeason')))
-    episodes = Selenium.get_wait(season, 15).until(all_located((By.TAG_NAME, 'option')))
+    episodes = Selenium.get_wait(season).until(all_located((By.TAG_NAME, 'option')))
 
     return len(episodes)
 
-def get_cover(serie, serie_query):
+def get_cover(serie_query):
     
     driver.switch_to.window(driver.window_handles[2])
     
-    driver.get(f'https://www.themoviedb.org/search?query={serie_query}')
+    driver.get(f'https://www.themoviedb.org/search?query=' + serie_query)
     
     # Getting Cover
     cover = wait.until(clickable((By.XPATH, '/html/body/div[1]/main/section/div/div/div[2]/section/div[1]/div/div[1]/div/div[1]/div/a/img'))).get_attribute('src')
@@ -90,17 +92,18 @@ def serie_insert(series):
         for key, value in mapping.items():
             field_id = value
             field_value = row[key]
+            if pd.isna(field_value): field_value = ''
             wait.until(clickable((By.ID, field_id))).send_keys(field_value)
 
         actions.send_keys(Keys.ENTER).perform()
         
-    driver.get('http://localhost:8000/series/insert')
+    driver.get(serie_insert_url)
 
 def serie_infos(series):
     
     platform_login()
     
-    # TMDB
+    # TMDB Tab
     driver.execute_script("window.open('');")
     driver.switch_to.window(driver.window_handles[2])
     
@@ -108,20 +111,20 @@ def serie_infos(series):
         
         driver.switch_to.window(driver.window_handles[0])
         
+        ## Get Serie Search
         serie_query = re.sub(r'[^a-z0-9 ]', '', serie.lower()).replace(' ', '%20')
-        
-        driver.get(f'https://www.imdb.com/find/?q={serie_query}&ref_=nv_sr_sm')
+        driver.get('https://www.imdb.com/find/?q=' + serie_query + '&ref_=nv_sr_sm')
         
         series_list = []
-        
         serie_infos = {'title': '', 'categories': [], 'creators': [], 'seasons': '', 'release': '', 'production': [], 'country': '', 'conclusion': '', 'synopsis': '', 'cover': ''}
     
-        wait.until(clickable((By.XPATH, '/html/body/div[2]/main/div[2]/div[3]/section/div/div[1]/section[2]/div[2]/ul/li[1]'))).click()
+        ## Select Serie Title
+        find_title = wait.until(located((By.CSS_SELECTOR, 'section[data-testid="find-results-section-title"]')))
+        Selenium.get_wait(find_title).until(clickable((By.CLASS_NAME, 'find-title-result'))).click()
         
         serie_code = driver.current_url.split('/')[4]
         
         actions.send_keys(Keys.END).perform()
-        
         time.sleep(1.5)
 
         ## Title

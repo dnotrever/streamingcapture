@@ -5,10 +5,12 @@ system('cls')
 option = input('\n$~  ').split(' ')
 
 if option[0] == 'movies':
-    pass
+    movies = input('\n$~  Movies:  ').split('; ')
+    from Movies import movie_infos
+    print(movie_infos(movies))
 
 if option[0] == 'series':
-    series = input('\n$~  Series: ').split('; ')
+    series = input('\n$~  Series:  ').split('; ')
     from Series import serie_infos
     print(serie_infos(series))
 
