@@ -180,6 +180,6 @@ def serie_infos(series):
     
     return 'Successfully series add!'
 
-print(
-    serie_infos(['from'])
-)
+# print(
+#     serie_infos(['from'])
+# )

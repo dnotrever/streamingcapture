@@ -12,15 +12,15 @@ wait = Selenium.get_wait(driver)
 actions = Selenium.get_actions(driver)
 
 load_dotenv()
-movie_insert_url = os.getenv('MOVIE_INSERT_URL')
-movie_video_1 = os.getenv('MOVIE_VIDEO_1')
-movie_video_2 = os.getenv('MOVIE_VIDEO_2')
+movies_url = os.getenv('MOVIES_URL')
+source_1_movies = os.getenv('SOURCE_1_MOVIES')
+source_2_movies = os.getenv('SOURCE_2_MOVIES')
 
 def platform_login():
 
     driver.execute_script("window.open('');")
     driver.switch_to.window(driver.window_handles[1])
-    driver.get(movie_insert_url)
+    driver.get(movies_url + 'insert')
 
     user_email = os.getenv('EMAIL')
     user_password = os.getenv('PASSWORD')
@@ -36,7 +36,7 @@ def get_movie_video(movie, movie_code, movie_year):
     movie_url = re.sub(r'[^\w]+', '-', movie.lower()) + '-' + movie_year + '/'
 
     try:
-        driver.get(movie_video_1 + movie_url)
+        driver.get(source_1_movies + movie_url)
 
         wait.until(clickable((By.CSS_SELECTOR, 'button[name="play"]'))).click()
 
@@ -59,7 +59,7 @@ def get_movie_video(movie, movie_code, movie_year):
         return video
     
     except:
-        return movie_video_2 + movie_code
+        return source_2_movies + movie_code
 
 def get_cover(movie_query):
     
@@ -120,9 +120,9 @@ def movie_insert(movies):
             if pd.isna(field_value): field_value = ''
             wait.until(clickable((By.ID, field_id))).send_keys(field_value)
 
-        actions.send_keys(Keys.ENTER).perform()
+    actions.send_keys(Keys.ENTER).perform()
 
-    driver.get(movie_insert_url)
+    driver.get(movies_url + 'insert')
 
 def movie_infos(movies):
 
@@ -218,6 +218,6 @@ def movie_infos(movies):
     
     return 'Successfully movies add!'
 
-# print(
-#     movie_infos(['avengers endgame'])
-# )
+print(
+    movie_infos(['avengers endgame', 'forrest gump'])
+)

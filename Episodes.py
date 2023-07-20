@@ -129,15 +129,15 @@ def episodes_insert(serie_url, season, episodes, season_current):
             
         wait.until(clickable((By.CSS_SELECTOR, 'button[type="submit"]'))).click()
 
-def episodes_infos(serie, season, default_video=False):
+def episodes_infos(serie, season, default_source='yes'):
     
-    default_video_url = lambda season, number: serie_video_2 + serie_code + '-' + season + '-' + str(number)
+    default_source_url = lambda season, number: serie_video_2 + serie_code + '-' + season + '-' + str(number)
     
     serie_url = re.sub(r'[^\w]+', '-', serie.lower())
 
     platform_login()
     
-    if not default_video:
+    if default_source != 'yes':
 
         ## Video Tab
         driver.execute_script("window.open('');")
@@ -148,7 +148,7 @@ def episodes_infos(serie, season, default_video=False):
             Selenium.get_wait(driver, 5).until(located((By.CLASS_NAME, 'movie-details')))
         except:
             driver.close()
-            default_video = True
+            default_source = 'yes'
 
     driver.switch_to.window(driver.window_handles[0])
 
@@ -188,7 +188,7 @@ def episodes_infos(serie, season, default_video=False):
             release_format = datetime.strptime(release.replace('.', ''), "%d %b %Y").strftime("%d/%m/%Y")
 
             ## Video
-            video = default_video_url(season, number) if default_video else get_episode_video(season, number)
+            video = default_source_url(season, number) if default_source == 'yes' else get_episode_video(season, number)
 
             episodes_infos['number'] = number
             episodes_infos['title'] = title
@@ -242,7 +242,7 @@ def episodes_infos(serie, season, default_video=False):
                     release_format = datetime.strptime(release.replace('.', ''), "%d %b %Y").strftime("%d/%m/%Y")
                 
                     ## Video
-                    video = default_video_url(season, number) if default_video else get_episode_video(season_current, number)
+                    video = default_source_url(season, number) if default_source else get_episode_video(season_current, number)
                     
                     episodes_infos['number'] = number
                     episodes_infos['title'] = title
@@ -261,6 +261,6 @@ def episodes_infos(serie, season, default_video=False):
     
     return 'Successfully episodes add!'
 
-print(
-    episodes_infos('from', 'all', True)
-)
+# print(
+#     episodes_infos('from', 'all', True)
+# )

@@ -15,4 +15,8 @@ if option[0] == 'series':
     print(serie_infos(series))
 
 if option[0] == 'episodes':
-    pass
+    serie = input('\n$~  Serie:  ')
+    season = input('\n$~  Season:  ')
+    source = input('\n$~  Default Source?  ').lower()
+    from Episodes import episodes_infos
+    print(episodes_infos(serie, season, source))
