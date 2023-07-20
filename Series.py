@@ -164,8 +164,8 @@ def serie_infos(series):
         for production_name in productions_names:
             serie_infos['production'].append(production_name.text)
 
-        seasons = get_seasons(title, serie_code)
-        cover = get_cover(title, serie_query)
+        seasons = get_seasons(serie_code)
+        cover = get_cover(serie_query)
         
         serie_infos['seasons'] = seasons
         serie_infos['cover'] = cover
@@ -180,6 +180,6 @@ def serie_infos(series):
     
     return 'Successfully series add!'
 
-# print(
-#     serie_infos(['the last of us', 'friends'])
-# )
+print(
+    serie_infos(['from'])
+)

@@ -13,8 +13,8 @@ actions = Selenium.get_actions(driver)
 
 load_dotenv()
 movie_insert_url = os.getenv('MOVIE_INSERT_URL')
-movie_url_1 = os.getenv('MOVIE_URL_1')
-movie_url_2 = os.getenv('MOVIE_URL_2')
+movie_video_1 = os.getenv('MOVIE_VIDEO_1')
+movie_video_2 = os.getenv('MOVIE_VIDEO_2')
 
 def platform_login():
 
@@ -36,7 +36,7 @@ def get_movie_video(movie, movie_code, movie_year):
     movie_url = re.sub(r'[^\w]+', '-', movie.lower()) + '-' + movie_year + '/'
 
     try:
-        driver.get(movie_url_1 + movie_url)
+        driver.get(movie_video_1 + movie_url)
 
         wait.until(clickable((By.CSS_SELECTOR, 'button[name="play"]'))).click()
 
@@ -59,7 +59,7 @@ def get_movie_video(movie, movie_code, movie_year):
         return video
     
     except:
-        return movie_url_2 + movie_code
+        return movie_video_2 + movie_code
 
 def get_cover(movie_query):
     
