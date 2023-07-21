@@ -12,13 +12,13 @@ wait = Selenium.get_wait(driver)
 actions = Selenium.get_actions(driver)
 
 load_dotenv()
-serie_insert_url = os.getenv('SERIE_INSERT_URL')
+series_url = os.getenv('SERIES_URL')
 
 def platform_login():
     
     driver.execute_script("window.open('');")
     driver.switch_to.window(driver.window_handles[1])
-    driver.get(serie_insert_url)
+    driver.get(series_url + 'insert')
     
     user_email = os.getenv('EMAIL')
     user_password = os.getenv('PASSWORD')
@@ -95,12 +95,13 @@ def serie_insert(series):
             if pd.isna(field_value): field_value = ''
             wait.until(clickable((By.ID, field_id))).send_keys(field_value)
 
-        actions.send_keys(Keys.ENTER).perform()
+    insert_btn = wait.until(located((By.CSS_SELECTOR, 'button[type="submit"]')))
+    driver.execute_script('arguments[0].click();', insert_btn)
         
-    driver.get(serie_insert_url)
+    driver.get(series_url + 'insert')
 
 def serie_infos(series):
-    
+
     platform_login()
     
     # TMDB Tab
@@ -165,21 +166,24 @@ def serie_infos(series):
             serie_infos['production'].append(production_name.text)
 
         seasons = get_seasons(serie_code)
-        cover = get_cover(serie_query)
+        
+        try: cover = get_cover(serie_query)
+        except: continue
         
         serie_infos['seasons'] = seasons
         serie_infos['cover'] = cover
 
         series_list.append(serie_infos)
         
-        dataframe = dataframe_create(series_list)
+        df_series = dataframe_create(series_list)
         
-        serie_insert(dataframe)
+        serie_insert(df_series)
 
-    driver.quit()
+    # driver.quit()
     
-    return 'Successfully series add!'
+    return ['success', 'Successfully series add!']
+
 
 # print(
-#     serie_infos(['from'])
+#     serie_infos(['prison break'])
 # )

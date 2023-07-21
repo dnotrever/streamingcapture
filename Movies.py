@@ -120,7 +120,8 @@ def movie_insert(movies):
             if pd.isna(field_value): field_value = ''
             wait.until(clickable((By.ID, field_id))).send_keys(field_value)
 
-    actions.send_keys(Keys.ENTER).perform()
+    insert_btn = wait.until(located((By.CSS_SELECTOR, 'button[type="submit"]')))
+    driver.execute_script('arguments[0].click();', insert_btn)
 
     driver.get(movies_url + 'insert')
 
@@ -216,8 +217,9 @@ def movie_infos(movies):
 
     driver.quit()
     
-    return 'Successfully movies add!'
+    return ['success', 'Successfully movies add!']
 
-print(
-    movie_infos(['avengers endgame', 'forrest gump'])
-)
+
+# print(
+#     movie_infos(['avengers endgame', 'forrest gump'])
+# )
