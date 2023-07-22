@@ -41,11 +41,10 @@ def get_episode_video(serie_code, season, number):
     video = source_2_series + serie_code + '-' + str(season) + '-' + str(number)
 
     try:
-
         episodes_button = Selenium.get_wait(seasons_container[int(season)-1]).until(all_located((By.TAG_NAME, 'button')))
         
         for episode in episodes_button:
-            if number_pad in episode.text:
+            if number_pad in re.findall(r'\d{2}', episode.text):
                 driver.execute_script('arguments[0].click();', episode)
                 video = wait.until(located((By.XPATH, '/html/body/div[1]/iframe'))).get_attribute('src')
                 break
@@ -271,6 +270,6 @@ def episodes_infos(serie, season_value, default_source='yes'):
     return ['success', 'Successfully episodes add!']
 
 
-# print(
-#     episodes_infos('prison break', '4', 'no')
-# )
+print(
+    episodes_infos('prison break', '4', 'no')
+)

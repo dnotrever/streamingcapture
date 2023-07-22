@@ -184,6 +184,6 @@ def serie_infos(series):
     return ['success', 'Successfully series add!']
 
 
-# print(
-#     serie_infos(['prison break'])
-# )
+print(
+    serie_infos(['prison break'])
+)
