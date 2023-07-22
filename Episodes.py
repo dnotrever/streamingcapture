@@ -56,9 +56,9 @@ def get_episode_video(serie_code, season, number):
                 
     except: pass
     
-    print('\n')
-    print(number_pad)
-    print(video)
+    # print('\n')
+    # print(number_pad)
+    # print(video)
         
     return video
 
@@ -148,12 +148,13 @@ def episodes_infos(serie, season_value, default_source='yes'):
     if default_source != 'yes':
 
         ## Video Tab
+        serie_query = re.sub(r'[^\w]+', '+', serie.lower())
         driver.execute_script("window.open('');")
         driver.switch_to.window(driver.window_handles[2])
-        driver.get(source_1_series + serie_url + '/')
+        driver.get(source_1_series + '?s=' + serie_query)
         
         try:
-            Selenium.get_wait(driver, 5).until(located((By.CLASS_NAME, 'movie-details')))
+            wait.until(clickable((By.XPATH, '/html/body/div[1]/form/div[6]/div'))).click()
         except:
             driver.close()
             default_source = 'yes'

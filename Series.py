@@ -12,17 +12,13 @@ wait = Selenium.get_wait(driver)
 actions = Selenium.get_actions(driver)
 
 load_dotenv()
+base_url = os.getenv('BASE_URL')
 series_url = os.getenv('SERIES_URL')
 
 def platform_login():
-    
-    driver.execute_script("window.open('');")
-    driver.switch_to.window(driver.window_handles[1])
-    driver.get(series_url + 'insert')
-    
+    driver.get(base_url + '/login')
     user_email = os.getenv('EMAIL')
     user_password = os.getenv('PASSWORD')
-    
     wait.until(clickable((By.ID, 'email'))).send_keys(user_email)
     wait.until(clickable((By.ID, 'password'))).send_keys(user_password)
     wait.until(clickable((By.CLASS_NAME, 'btn'))).click()
@@ -31,22 +27,39 @@ def get_seasons(serie_code):
     
     driver.get(f'https://www.imdb.com/title/' + serie_code + '/episodes')
     
+    serie_title = wait.until(located((By.CSS_SELECTOR, 'h3[itemprop="name"]')))
+    serie_dates = Selenium.get_wait(serie_title).until(located((By.CLASS_NAME, 'nobr')))
+    
+    try: conclusion_year = re.sub(r'^\s*\(|\)\s*$', '', serie_dates.text).split('–')[1]
+    except: conclusion_year = serie_dates.text
+    
     season = wait.until(located((By.ID, 'bySeason')))
     episodes = Selenium.get_wait(season).until(all_located((By.TAG_NAME, 'option')))
 
-    return len(episodes)
+    if conclusion_year == ' ':
+        return len(episodes) - 1
+    else:
+        return len(episodes)
 
 def get_cover(serie_query):
-    
-    driver.switch_to.window(driver.window_handles[2])
-    
-    driver.get(f'https://www.themoviedb.org/search?query=' + serie_query)
-    
-    # Getting Cover
-    cover = wait.until(clickable((By.XPATH, '/html/body/div[1]/main/section/div/div/div[2]/section/div[1]/div/div[1]/div/div[1]/div/a/img'))).get_attribute('src')
-    cover = cover.split('/')[6]
 
-    return cover
+    driver.switch_to.window(driver.window_handles[1])
+    
+    driver.get('https://www.themoviedb.org/search?query=' + serie_query)
+    
+    cover = ''
+    
+    try:
+        
+        ## Getting Cover
+        cover_url = wait.until(clickable((By.XPATH, '/html/body/div[1]/main/section/div/div/div[2]/section/div[1]/div/div[1]/div/div[1]/div/a/img'))).get_attribute('src')
+        cover = cover_url.split('/')[6]
+
+        return cover
+    
+    except:
+        
+        return cover
 
 def dataframe_create(series):
     
@@ -73,6 +86,7 @@ def dataframe_create(series):
 def serie_insert(series):
     
     driver.switch_to.window(driver.window_handles[1])
+    driver.get(series_url + 'insert')
         
     for index, row in series.iterrows():
 
@@ -97,16 +111,11 @@ def serie_insert(series):
 
     insert_btn = wait.until(located((By.CSS_SELECTOR, 'button[type="submit"]')))
     driver.execute_script('arguments[0].click();', insert_btn)
-        
-    driver.get(series_url + 'insert')
 
 def serie_infos(series):
 
-    platform_login()
-    
-    # TMDB Tab
-    driver.execute_script("window.open('');")
-    driver.switch_to.window(driver.window_handles[2])
+    try: platform_login()
+    except: pass
     
     for serie in series:
         
@@ -115,15 +124,15 @@ def serie_infos(series):
         ## Get Serie Search
         serie_query = re.sub(r'[^a-z0-9 ]', '', serie.lower()).replace(' ', '%20')
         driver.get('https://www.imdb.com/find/?q=' + serie_query + '&ref_=nv_sr_sm')
-        
-        series_list = []
-        serie_infos = {'title': '', 'categories': [], 'creators': [], 'seasons': '', 'release': '', 'production': [], 'country': '', 'conclusion': '', 'synopsis': '', 'cover': ''}
     
         ## Select Serie Title
         find_title = wait.until(located((By.CSS_SELECTOR, 'section[data-testid="find-results-section-title"]')))
         Selenium.get_wait(find_title).until(clickable((By.CLASS_NAME, 'find-title-result'))).click()
         
         serie_code = driver.current_url.split('/')[4]
+        
+        series_list = []
+        serie_infos = {'title': '', 'categories': [], 'creators': [], 'seasons': '', 'release': '', 'production': [], 'country': '', 'conclusion': '', 'synopsis': '', 'cover': ''}
         
         actions.send_keys(Keys.END).perform()
         time.sleep(1.5)
@@ -167,8 +176,9 @@ def serie_infos(series):
 
         seasons = get_seasons(serie_code)
         
-        try: cover = get_cover(serie_query)
-        except: continue
+        driver.execute_script("window.open('');")
+        
+        cover = get_cover(serie_query)
         
         serie_infos['seasons'] = seasons
         serie_infos['cover'] = cover
@@ -178,12 +188,12 @@ def serie_infos(series):
         df_series = dataframe_create(series_list)
         
         serie_insert(df_series)
+        
+        driver.close()
 
-    # driver.quit()
-    
     return ['success', 'Successfully series add!']
 
 
-print(
-    serie_infos(['prison break'])
-)
+# print(
+#     serie_infos(['from', 'prison break', 'kyel xy'])
+# )

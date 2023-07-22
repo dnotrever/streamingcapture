@@ -12,31 +12,30 @@ wait = Selenium.get_wait(driver)
 actions = Selenium.get_actions(driver)
 
 load_dotenv()
+base_url = os.getenv('BASE_URL')
 movies_url = os.getenv('MOVIES_URL')
 source_1_movies = os.getenv('SOURCE_1_MOVIES')
 source_2_movies = os.getenv('SOURCE_2_MOVIES')
 
 def platform_login():
-
-    driver.execute_script("window.open('');")
-    driver.switch_to.window(driver.window_handles[1])
-    driver.get(movies_url + 'insert')
-
+    driver.get(base_url + '/login')
     user_email = os.getenv('EMAIL')
     user_password = os.getenv('PASSWORD')
-    
     wait.until(clickable((By.ID, 'email'))).send_keys(user_email)
     wait.until(clickable((By.ID, 'password'))).send_keys(user_password)
     wait.until(clickable((By.CLASS_NAME, 'btn'))).click()
 
-def get_movie_video(movie, movie_code, movie_year):
+def get_movie_video(movie, movie_code):
 
-    driver.switch_to.window(driver.window_handles[3])
+    driver.switch_to.window(driver.window_handles[1])
 
-    movie_url = re.sub(r'[^\w]+', '-', movie.lower()) + '-' + movie_year + '/'
+    movie_query = re.sub(r'[^\w]+', '+', movie.lower())
+    
+    driver.get(source_1_movies + '?s=' + movie_query)
 
     try:
-        driver.get(source_1_movies + movie_url)
+        
+        wait.until(clickable((By.XPATH, '/html/body/div[1]/form/div[6]/div'))).click()
 
         wait.until(clickable((By.CSS_SELECTOR, 'button[name="play"]'))).click()
 
@@ -55,23 +54,37 @@ def get_movie_video(movie, movie_code, movie_year):
                 break
             except:
                 continue
+            
+        if len(driver.window_handles) > 2:
+            for num in range(len(driver.window_handles) - 2):
+                driver.switch_to.window(driver.window_handles[2])
+                driver.close()
 
         return video
     
     except:
+        
         return source_2_movies + movie_code
 
 def get_cover(movie_query):
     
-    driver.switch_to.window(driver.window_handles[2])
+    driver.switch_to.window(driver.window_handles[1])
     
-    driver.get(f'https://www.themoviedb.org/search?query=' + movie_query)
+    driver.get('https://www.themoviedb.org/search?query=' + movie_query)
     
-    # Getting Cover
-    cover = wait.until(clickable((By.XPATH, '/html/body/div[1]/main/section/div/div/div[2]/section/div[1]/div/div[1]/div/div[1]/div/a/img'))).get_attribute('src')
-    cover = cover.split('/')[6]
+    cover = 'https://upload.wikimedia.org/wikipedia/commons/1/14/No_Image_Available.jpg'
+    
+    try:
+    
+        ## Getting Cover
+        cover = wait.until(clickable((By.XPATH, '/html/body/div[1]/main/section/div/div/div[2]/section/div[1]/div/div[1]/div/div[1]/div/a/img'))).get_attribute('src')
+        cover = cover.split('/')[6]
 
-    return cover
+        return cover
+    
+    except:
+        
+        return cover
 
 def dataframe_create(movies):
     
@@ -97,7 +110,7 @@ def dataframe_create(movies):
 
 def movie_insert(movies):
 
-    driver.switch_to.window(driver.window_handles[1])
+    driver.get(movies_url + 'insert')
 
     for index, row in movies.iterrows():
     
@@ -123,19 +136,10 @@ def movie_insert(movies):
     insert_btn = wait.until(located((By.CSS_SELECTOR, 'button[type="submit"]')))
     driver.execute_script('arguments[0].click();', insert_btn)
 
-    driver.get(movies_url + 'insert')
-
 def movie_infos(movies):
 
-    platform_login()
-    
-    # TMDB Tab
-    driver.execute_script("window.open('');")
-    driver.switch_to.window(driver.window_handles[2])
-
-    # Video Tab
-    driver.execute_script("window.open('');")
-    driver.switch_to.window(driver.window_handles[3])
+    try: platform_login()
+    except: pass
     
     for movie in movies:
 
@@ -145,17 +149,18 @@ def movie_infos(movies):
         movie_query = re.sub(r'[^a-z0-9 ]', '', movie.lower()).replace(' ', '%20')
         driver.get('https://www.imdb.com/find/?q=' + movie_query + '&ref_=nv_sr_sm')
 
-        movies_list = []
-        movie_infos = {'title': '', 'categories': [], 'directors': [], 'writers': [], 'release': '', 'production': [], 'country': '', 'synopsis': '', 'cover': '', 'video': '' }
-    
+        
         ## Select Movie Title
         find_title = wait.until(located((By.CSS_SELECTOR, 'section[data-testid="find-results-section-title"]')))
         Selenium.get_wait(find_title).until(clickable((By.CLASS_NAME, 'find-title-result'))).click()
 
         movie_code = driver.current_url.split('/')[4]
 
+        movies_list = []
+        movie_infos = {'title': '', 'categories': [], 'directors': [], 'writers': [], 'release': '', 'production': [], 'country': '', 'synopsis': '', 'cover': '', 'video': '' }
+
         actions.send_keys(Keys.END).perform()
-        time.sleep(2)
+        time.sleep(1.5)
     
         ## Title
         title = wait.until(located((By.XPATH, '/html/body/div[2]/main/div/section[1]/section/div[3]/section/section/div[2]/div[1]/h1/span'))).text
@@ -200,9 +205,9 @@ def movie_infos(movies):
         for production_name in productions_names:
             movie_infos['production'].append(production_name.text)
 
-        release_year = movie_infos['release'].split('/')[2]
+        driver.execute_script("window.open('');")
 
-        video = get_movie_video(title, movie_code, release_year)
+        video = get_movie_video(title, movie_code)
 
         cover = get_cover(movie_query)
 
@@ -215,7 +220,7 @@ def movie_infos(movies):
         
         movie_insert(dataframe)
 
-    driver.quit()
+        driver.close()
     
     return ['success', 'Successfully movies add!']
 
