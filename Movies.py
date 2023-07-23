@@ -30,7 +30,6 @@ def get_movie_video(movie, movie_code):
     driver.switch_to.window(driver.window_handles[1])
 
     movie_query = re.sub(r'[^\w]+', '+', movie.lower())
-    
     driver.get(source_1_movies + '?s=' + movie_query)
 
     try:
@@ -149,7 +148,6 @@ def movie_infos(movies):
         movie_query = re.sub(r'[^a-z0-9 ]', '', movie.lower()).replace(' ', '%20')
         driver.get('https://www.imdb.com/find/?q=' + movie_query + '&ref_=nv_sr_sm')
 
-        
         ## Select Movie Title
         find_title = wait.until(located((By.CSS_SELECTOR, 'section[data-testid="find-results-section-title"]')))
         Selenium.get_wait(find_title).until(clickable((By.CLASS_NAME, 'find-title-result'))).click()

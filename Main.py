@@ -1,5 +1,9 @@
 from os import system
 
+from Selenium import get_driver
+
+driver = get_driver()
+
 system('cls')
 
 messageColors = {
@@ -45,8 +49,8 @@ def commandline():
         
         executing('series')
         
-        from Series import serie_infos
-        msg = serie_infos(series)
+        from Series import Series
+        msg = Series(driver).serie_infos(series)
 
         message(msg)
 
@@ -58,14 +62,16 @@ def commandline():
         
         executing('episodes')
         
-        from Episodes import episodes_infos
-        msg = episodes_infos(serie, season, source)
+        from Episodes import Episodes
+        msg = Episodes(driver).episodes_infos(serie, season, source)
         
         message(msg)
         
     if option[0] == 'clear': system('cls')
     
     if option[0] == 'exit': return
+    
+    driver.switch_to.window(driver.window_handles[0])
         
     commandline()
 
