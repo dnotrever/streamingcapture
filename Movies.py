@@ -38,11 +38,6 @@ def get_movie_video(movie, movie_code):
 
         wait.until(clickable((By.CSS_SELECTOR, 'button[name="play"]'))).click()
 
-        if len(driver.window_handles) > 4:
-            for num in range(len(driver.window_handles) - 4):
-                driver.switch_to.window(driver.window_handles[num+4])
-                driver.close()
-
         divPlay = wait.until(located((By.CLASS_NAME, 'play')))
 
         linksPlay = Selenium.get_wait(divPlay).until(all_located((By.CLASS_NAME, 'btn')))
@@ -55,7 +50,7 @@ def get_movie_video(movie, movie_code):
                 continue
             
         if len(driver.window_handles) > 2:
-            for num in range(len(driver.window_handles) - 2):
+            for _ in range(len(driver.window_handles) - 2):
                 driver.switch_to.window(driver.window_handles[2])
                 driver.close()
 

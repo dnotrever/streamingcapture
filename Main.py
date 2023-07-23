@@ -30,7 +30,7 @@ def executing(label):
 
 def commandline():
     
-    option = input(parag).split(' ')
+    option = input(parag).split(' # ')
 
     if option[0] == 'movies':
         
@@ -45,7 +45,7 @@ def commandline():
         
     if option[0] == 'series':
         
-        series = input(parag + info + 'Series: ' + reset).split('; ')
+        series = option[1].split('; ')
         
         executing('series')
         
@@ -56,14 +56,20 @@ def commandline():
 
     if option[0] == 'episodes':
         
-        serie = input(parag + info + 'Serie: ' + reset)
-        season = input(parag + info + 'Season: ' + reset)
-        source = input(parag + info + 'Default Source? ' + reset).lower()
-        
+        query = option[1].split(' % ')
+
+        serie = query[0]
+        season = query[1].split(' ')
+
+        try:
+            if season[1].lower() == 'y': default_source = True
+        except:
+            default_source = False
+
         executing('episodes')
         
         from Episodes import Episodes
-        msg = Episodes(driver).episodes_infos(serie, season, source)
+        msg = Episodes(driver).episodes_infos(serie, season[0], default_source)
         
         message(msg)
         

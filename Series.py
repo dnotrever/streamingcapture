@@ -20,9 +20,14 @@ class Series:
         self.series_url = os.getenv('SERIES_URL')
         
     def platform_login(self):
+
+        self.driver.execute_script("window.open('');")
+        self.driver.switch_to.window(self.driver.window_handles[1])
         self.driver.get(self.base_url + '/login')
+    
         user_email = os.getenv('EMAIL')
         user_password = os.getenv('PASSWORD')
+
         self.wait.until(clickable((By.ID, 'email'))).send_keys(user_email)
         self.wait.until(clickable((By.ID, 'password'))).send_keys(user_password)
         self.wait.until(clickable((By.CLASS_NAME, 'btn'))).click()
@@ -45,32 +50,36 @@ class Series:
         else:
             return len(episodes)
 
-    def get_cover(self, serie_query):
+    def get_serie_cover(self, serie):
 
-        self.driver.switch_to.window(self.driver.window_handles[1])
-        
+        self.driver.switch_to.window(self.driver.window_handles[2])
+
+        serie_query = re.sub(r'[^\w]+', '-', serie.lower())
+
         self.driver.get('https://www.themoviedb.org/search?query=' + serie_query)
         
-        cover = ''
+        serie_cover = ''
         
         try:
             
             ## Getting Cover
             cover_url = self.wait.until(clickable((By.XPATH, '/html/body/div[1]/main/section/div/div/div[2]/section/div[1]/div/div[1]/div/div[1]/div/a/img'))).get_attribute('src')
-            cover = cover_url.split('/')[6]
+            serie_cover = cover_url.split('/')[6]
 
-            return cover
-        
         except:
             
-            return cover
+            pass
+            
+        self.driver.close()
+
+        return serie_cover
 
     def dataframe_create(self, series):
         
-        data = []
+        serie_data = []
 
         for serie in series:
-            data.append([
+            serie_data.append([
                 serie['title'],
                 '; '.join(serie['categories']),
                 '; '.join(serie['creators']),
@@ -83,13 +92,14 @@ class Series:
                 serie['cover']
             ])
 
-        main_infos = pd.DataFrame(data, columns=['Title', 'Categories', 'Creators', 'Seasons', 'Release', 'Production', 'Country', 'Conclusion', 'Synopsis', 'Cover'])
+        serie_infos = pd.DataFrame(serie_data, columns=['Title', 'Categories', 'Creators', 'Seasons', 'Release', 'Production', 'Country', 'Conclusion', 'Synopsis', 'Cover'])
 
-        return main_infos
+        return serie_infos
 
     def serie_insert(self, series):
         
         self.driver.switch_to.window(self.driver.window_handles[1])
+
         self.driver.get(self.series_url + 'insert')
             
         for index, row in series.iterrows():
@@ -118,8 +128,8 @@ class Series:
 
     def serie_infos(self, series):
 
-        try: self.platform_login()
-        except: pass
+        if len(self.driver.window_handles) == 1:
+            self.platform_login()
         
         for serie in series:
             
@@ -130,8 +140,9 @@ class Series:
             self.driver.get('https://www.imdb.com/find/?q=' + serie_query + '&ref_=nv_sr_sm')
         
             ## Select Serie Title
-            find_title = self.wait.until(located((By.CSS_SELECTOR, 'section[data-testid="find-results-section-title"]')))
-            get_wait(find_title).until(clickable((By.CLASS_NAME, 'find-title-result'))).click()
+            search_serie_title = self.wait.until(located((By.CSS_SELECTOR, 'section[data-testid="find-results-section-title"]')))
+            result_serie_title = get_wait(search_serie_title).until(clickable((By.CLASS_NAME, 'find-title-result')))
+            self.driver.execute_script('arguments[0].click();', result_serie_title)
             
             serie_code = self.driver.current_url.split('/')[4]
             
@@ -142,50 +153,51 @@ class Series:
             time.sleep(1.5)
 
             ## Title
-            title = self.wait.until(located((By.XPATH, '/html/body/div[2]/main/div/section[1]/section/div[3]/section/section/div[2]/div[1]/h1/span'))).text
-            serie_infos['title'] = title
+            serie_title = self.wait.until(located((By.XPATH, '/html/body/div[2]/main/div/section[1]/section/div[3]/section/section/div[2]/div[1]/h1/span'))).text
+            serie_infos['title'] = serie_title
 
             ## Categories
-            categories = self.wait.until(located((By.XPATH, '/html/body/div[2]/main/div/section[1]/section/div[3]/section/section/div[3]/div[2]/div[1]/section/div[1]/div[2]')))
-            categories_names = get_wait(categories).until(all_located((By.CLASS_NAME, 'ipc-chip__text')))
-            for category_name in categories_names:
-                serie_infos['categories'].append(category_name.text)
+            serie_categories = self.wait.until(located((By.XPATH, '/html/body/div[2]/main/div/section[1]/section/div[3]/section/section/div[3]/div[2]/div[1]/section/div[1]/div[2]')))
+            categories_names = get_wait(serie_categories).until(all_located((By.CLASS_NAME, 'ipc-chip__text')))
+            for category in categories_names:
+                serie_infos['categories'].append(category.text)
             
             ## Synopsis
-            synopsis = self.wait.until(located((By.XPATH, '/html/body/div[2]/main/div/section[1]/section/div[3]/section/section/div[3]/div[2]/div[1]/section/p/span[3]'))).text
-            serie_infos['synopsis'] = synopsis
+            serie_synopsis = self.wait.until(located((By.XPATH, '/html/body/div[2]/main/div/section[1]/section/div[3]/section/section/div[3]/div[2]/div[1]/section/p/span[3]'))).text
+            serie_infos['synopsis'] = serie_synopsis
             
             ## Creators
-            creators = self.wait.until(located((By.XPATH, '/html/body/div[2]/main/div/section[1]/section/div[3]/section/section/div[3]/div[2]/div[1]/section/div[2]/div/ul/li[1]')))
-            creators_names = get_wait(creators).until(all_located((By.CLASS_NAME, 'ipc-metadata-list-item__list-content-item')))
-            for creator_name in creators_names:
-                serie_infos['creators'].append(creator_name.text)
+            serie_creators = self.wait.until(located((By.XPATH, '/html/body/div[2]/main/div/section[1]/section/div[3]/section/section/div[3]/div[2]/div[1]/section/div[2]/div/ul/li[1]')))
+            creators_names = get_wait(serie_creators).until(all_located((By.CLASS_NAME, 'ipc-metadata-list-item__list-content-item')))
+            for creator in creators_names:
+                serie_infos['creators'].append(creator.text)
             
             ## Release
-            release = self.wait.until(located((By.CSS_SELECTOR, 'li[data-testid="title-details-releasedate"]')))
+            serie_release = self.wait.until(located((By.CSS_SELECTOR, 'li[data-testid="title-details-releasedate"]')))
 
             ## Date
-            release_date = get_wait(release).until(located((By.CLASS_NAME, 'ipc-metadata-list-item__list-content-item'))).text.split(' (')[0]
+            release_date = get_wait(serie_release).until(located((By.CLASS_NAME, 'ipc-metadata-list-item__list-content-item'))).text.split(' (')[0]
             serie_infos['release'] = datetime.strptime(release_date, "%B %d, %Y").strftime("%d/%m/%Y")
             
             ## Country
-            country = get_wait(release).until(located((By.CLASS_NAME, 'ipc-metadata-list-item__list-content-item'))).text.split(' (')[1]
-            serie_infos['country'] = country.replace(')', '')
+            serie_country = get_wait(serie_release).until(located((By.CLASS_NAME, 'ipc-metadata-list-item__list-content-item'))).text.split(' (')[1]
+            serie_infos['country'] = serie_country.replace(')', '')
 
             ## Productions
-            productions = self.wait.until(located((By.CSS_SELECTOR, 'li[data-testid="title-details-companies"]')))
-            productions_names = get_wait(productions).until(all_located((By.CLASS_NAME, 'ipc-metadata-list-item__list-content-item')))
-            for production_name in productions_names:
-                serie_infos['production'].append(production_name.text)
+            serie_productions = self.wait.until(located((By.CSS_SELECTOR, 'li[data-testid="title-details-companies"]')))
+            productions_names = get_wait(serie_productions).until(all_located((By.CLASS_NAME, 'ipc-metadata-list-item__list-content-item')))
+            for production in productions_names:
+                serie_infos['production'].append(production.text)
 
-            seasons = self.get_seasons(serie_code)
+            serie_seasons_count = self.get_seasons(serie_code)
             
+            self.driver.switch_to.window(self.driver.window_handles[1])
             self.driver.execute_script("window.open('');")
             
-            cover = self.get_cover(serie_query)
+            serie_cover = self.get_serie_cover(serie_title)
             
-            serie_infos['seasons'] = seasons
-            serie_infos['cover'] = cover
+            serie_infos['seasons'] = serie_seasons_count
+            serie_infos['cover'] = serie_cover
 
             series_list.append(serie_infos)
             
@@ -193,8 +205,6 @@ class Series:
             
             self.serie_insert(df_series)
             
-            self.driver.close()
-
         return ['success', 'Successfully series add!']
 
 
