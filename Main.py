@@ -34,12 +34,12 @@ def commandline():
 
     if option[0] == 'movies':
         
-        movies = input(parag + info + 'Movies: ' + reset).split('; ')
+        movies = option[1].split('; ')
         
         executing('movies')
         
-        from Movies import movie_infos
-        msg = movie_infos(movies)
+        from Movies import Movies
+        msg = Movies(driver).movie_infos(movies)
         
         message(msg)
         

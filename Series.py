@@ -6,6 +6,8 @@ from dotenv import load_dotenv
 from Selenium import By, Keys
 from Selenium import get_wait, get_actions, clickable, located, all_located
 
+from Episodes import Episodes
+
 class Series:
     
     def __init__(self, driver):
@@ -42,13 +44,13 @@ class Series:
         try: conclusion_year = re.sub(r'^\s*\(|\)\s*$', '', serie_dates.text).split('–')[1]
         except: conclusion_year = serie_dates.text
         
-        season = self.wait.until(located((By.ID, 'bySeason')))
-        episodes = get_wait(season).until(all_located((By.TAG_NAME, 'option')))
+        season_list  = self.wait.until(located((By.ID, 'bySeason')))
+        season_count = get_wait(season_list ).until(all_located((By.TAG_NAME, 'option')))
 
         if conclusion_year == ' ':
-            return len(episodes) - 1
+            return len(season_count ) - 1
         else:
-            return len(episodes)
+            return len(season_count )
 
     def get_serie_cover(self, serie):
 
@@ -56,20 +58,14 @@ class Series:
 
         serie_query = re.sub(r'[^\w]+', '-', serie.lower())
 
-        self.driver.get('https://www.themoviedb.org/search?query=' + serie_query)
+        self.driver.get('https://www.themoviedb.org/search/tv?query=' + serie_query)
         
         serie_cover = ''
         
-        try:
-            
-            ## Getting Cover
-            cover_url = self.wait.until(clickable((By.XPATH, '/html/body/div[1]/main/section/div/div/div[2]/section/div[1]/div/div[1]/div/div[1]/div/a/img'))).get_attribute('src')
-            serie_cover = cover_url.split('/')[6]
+        ## Getting Cover
+        cover_url = self.wait.until(clickable((By.XPATH, '/html/body/div[1]/main/section/div/div/div[2]/section/div[1]/div/div[1]/div/div[1]/div/a/img'))).get_attribute('src')
+        serie_cover = cover_url.split('/')[6]
 
-        except:
-            
-            pass
-            
         self.driver.close()
 
         return serie_cover
@@ -204,6 +200,9 @@ class Series:
             df_series = self.dataframe_create(series_list)
             
             self.serie_insert(df_series)
+
+            insert_episodes = Episodes(self.driver)
+            insert_episodes.episodes_infos(serie_title, 'all', False)
             
         return ['success', 'Successfully series add!']
 

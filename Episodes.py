@@ -20,7 +20,14 @@ class Episodes:
         self.series_url = os.getenv('SERIES_URL')
         self.source_1_series = os.getenv('SOURCE_1_SERIES')
         self.source_2_series = os.getenv('SOURCE_2_SERIES')
-        
+    
+    def close_spam_tabs(self, actived_tabs):
+
+        if len(self.driver.window_handles) > actived_tabs:
+            for _ in range(len(self.driver.window_handles) - actived_tabs):
+                self.driver.switch_to.window(self.driver.window_handles[actived_tabs])
+                self.driver.close()
+
     def platform_login(self):
 
         self.driver.execute_script("window.open('');")
@@ -40,11 +47,11 @@ class Episodes:
         
         video = self.source_2_series + serie_code + '-' + str(season_value) + '-' + str(episode_number)
 
-        seasons_container = self.wait.until(all_located((By.CSS_SELECTOR, 'form[method="post"]')))
-        
-        number_pad = str(episode_number).zfill(2)
-
         try:
+
+            seasons_container = self.wait.until(all_located((By.CSS_SELECTOR, 'form[method="post"]')))
+        
+            number_pad = str(episode_number).zfill(2)
             
             episodes_button = get_wait(seasons_container[int(season_value)-1]).until(all_located((By.TAG_NAME, 'button')))
             
@@ -58,10 +65,7 @@ class Episodes:
             
             pass
             
-        if len(self.driver.window_handles) > 3:
-            for _ in range(len(self.driver.window_handles) - 3):
-                self.driver.switch_to.window(self.driver.window_handles[3])
-                self.driver.close()
+        self.close_spam_tabs(3)
         
         return video
 
@@ -81,60 +85,38 @@ class Episodes:
 
         return main_infos
 
-    def episodes_insert(self, serie_url, season, episodes, season_current=''):
+    def episodes_insert(self, serie_url, season, episodes):
 
         self.driver.switch_to.window(self.driver.window_handles[1])
 
-        if season != 'all':
-
-            self.driver.get(self.series_url + serie_url + '/' + season + '/episodes-control')
+        self.driver.get(self.series_url + serie_url + '/' + season + '/episodes-control')
             
-            for index, row in episodes.iterrows():
+        for index, row in episodes.iterrows():
 
-                if index < len(episodes):
-                        
-                    mapping = {
-                        'Title': f'title_{index}',
-                        'Video': f'video_{index}',
-                        'Release': f'released_{index}',
-                    }
-
-                    for key, value in mapping.items():
-                        field_id = value
-                        field_value = row[key]
-                        if pd.isna(field_value): field_value = ''
-                        self.wait.until(clickable((By.ID, field_id))).send_keys(field_value)
-
-                    if index < len(episodes) - 1:
-                        self.wait.until(clickable((By.ID, 'add-episode'))).click()
+            if index < len(episodes):
                     
-                    self.actions.send_keys(Keys.END).perform()
+                mapping = {
+                    'Title': f'title_{index}',
+                    'Video': f'video_{index}',
+                    'Release': f'released_{index}',
+                }
 
-        if season == 'all':
-                
-            self.driver.get(self.series_url + serie_url + '/' + str(season_current) + '/episodes-control')
-                
-            for index, row in episodes.iterrows():
-                
-                if index < len(episodes):
-                        
-                    mapping = {
-                        'Title': f'title_{index}',
-                        'Video': f'video_{index}',
-                        'Release': f'released_{index}',
-                    }
+                for key, value in mapping.items():
 
-                    for key, value in mapping.items():
-                        field_id = value
-                        field_value = row[key]
-                        if pd.isna(field_value): field_value = ''
-                        self.wait.until(clickable((By.ID, field_id))).send_keys(field_value)
+                    field_id = value
+                    field_value = row[key]
 
-                    if index < len(episodes) - 1:
-                        self.wait.until(clickable((By.ID, 'add-episode'))).click()
+                    if pd.isna(field_value): field_value = ''
+
+                    input_field = self.wait.until(clickable((By.ID, field_id)))
                     
-                    self.actions.send_keys(Keys.END).perform()
-        
+                    input_field.clear()
+                    input_field.send_keys(field_value)
+
+                if index < len(episodes) - 1:
+                    add_episode = self.wait.until(located((By.ID, 'add-episode')))
+                    self.driver.execute_script('arguments[0].click();', add_episode)
+                
         episode_form = self.wait.until(located((By.CLASS_NAME, 'App_episodesControlForm')))
         insert_btn = get_wait(episode_form).until(located((By.CSS_SELECTOR, 'button[type="submit"]')))
         self.driver.execute_script('arguments[0].click();', insert_btn)
@@ -225,26 +207,33 @@ class Episodes:
 
             self.driver.get('https://www.imdb.com/title/' + serie_code + '/episodes')
 
-            season_select = self.wait.until(located((By.ID, 'bySeason')))
-            episodes_options = get_wait(season_select).until(all_located((By.TAG_NAME, 'option')))
+            serie_title = self.wait.until(located((By.CSS_SELECTOR, 'h3[itemprop="name"]')))
+            serie_dates = get_wait(serie_title).until(located((By.CLASS_NAME, 'nobr')))
+            
+            try: conclusion_year = re.sub(r'^\s*\(|\)\s*$', '', serie_dates.text).split('–')[1]
+            except: conclusion_year = serie_dates.text
+
+            season_list = self.wait.until(located((By.ID, 'bySeason')))
+            season_count = len(get_wait(season_list).until(all_located((By.TAG_NAME, 'option'))))
+
+            if conclusion_year == ' ':
+                season_count -= 1
             
             season_current = 0
-            
-            for _ in range(len(episodes_options)):
-                
-                episodes_list = []
-                
-                self.driver.switch_to.window(self.driver.window_handles[0])
-                
+
+            for _ in range(season_count):
+
                 try:
-                    
+                
+                    episodes_list = []
+                
                     season_current += 1
                 
                     self.driver.get(f'https://www.imdb.com/title/' + serie_code + '/episodes?season=' + str(season_current))
                     
                     episodes = self.wait.until(all_located((By.CSS_SELECTOR, 'div[itemprop="episodes"]')))
                     
-                    number = 0
+                    episode_number = 0
                     
                     for episode in episodes:
                         
@@ -252,31 +241,36 @@ class Episodes:
                         
                         episodes_infos = {'number': '', 'title': '', 'video': '', 'release': ''}
                         
-                        number += 1
+                        episode_number += 1
                         
                         ## Title
-                        title = get_wait(episode).until(located((By.CSS_SELECTOR, 'a[itemprop="name"]'))).text
+                        episode_title = get_wait(episode).until(located((By.CSS_SELECTOR, 'a[itemprop="name"]'))).text
                         
                         ## Release
-                        release = get_wait(episode).until(located((By.CLASS_NAME, 'airdate'))).text
-                        release_format = datetime.strptime(release.replace('.', ''), "%d %b %Y").strftime("%d/%m/%Y")
+                        episode_release = get_wait(episode).until(located((By.CLASS_NAME, 'airdate'))).text
+                        release_format = datetime.strptime(episode_release.replace('.', ''), "%d %b %Y").strftime("%d/%m/%Y")
                     
                         ## Video
-                        video = default_source_url(season_value, number) if default_source else self.get_episode_video(serie_code, season_current, number)
+                        episode_video = default_source_url(season_value, episode_number) if default_source else self.get_episode_video(serie_code, season_current, episode_number)
                         
-                        episodes_infos['number'] = number
-                        episodes_infos['title'] = title
-                        episodes_infos['video'] = video
+                        episodes_infos['number'] = episode_number
+                        episodes_infos['title'] = episode_title
+                        episodes_infos['video'] = episode_video
                         episodes_infos['release'] = release_format
                         
                         episodes_list.append(episodes_infos)
                         
                         df_episodes = self.dataframe_create(episodes_list)
-                        
-                    self.episodes_insert(serie_url, season_value, df_episodes, season_current, season_current)
-                            
+
+                    self.episodes_insert(serie_url, str(season_current), df_episodes)
+
+                    self.driver.switch_to.window(self.driver.window_handles[0])
+
                 except: continue
-        
+
+            self.driver.switch_to.window(self.driver.window_handles[2])
+            if not default_source: self.driver.close()
+
         return ['success', 'Successfully episodes add!']
 
 
