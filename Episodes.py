@@ -3,8 +3,8 @@ import time, re, os
 from datetime import datetime
 from dotenv import load_dotenv
 
-from Selenium import By, Keys
-from Selenium import get_wait, get_actions, clickable, located, all_located
+from streamingcapture.selenium_core import By, Keys
+from streamingcapture.selenium_core import get_wait, get_actions, clickable, located, all_located
 
 class Episodes:
     

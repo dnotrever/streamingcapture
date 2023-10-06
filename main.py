@@ -1,31 +1,27 @@
 from os import system
 
-from Selenium import get_driver
+from selenium_core import sc
 
-driver = get_driver()
-
-system('cls')
+system('clear')
 
 messageColors = {
-    'others': '\033[1;34m',
-    'success': '\033[0;32m',
-    'error': '\033[1;31m',
+    'others': '\033[34m',
+    'success': '\033[32m',
+    'error': '\033[31m',
     'info': '\033[36m',
-    'detail': '\033[1;90m',
-    'reset': '\033[0;0m',
+    'detail': '\033[90m',
+    'reset': '\033[0m',
 }
 
 others, success, error, info, detail, reset = messageColors.values()
 
-parag = f'\n {others}$~{reset}  '
+parag = f'\n {others}$~{reset} '
 
 def message(msg):
-    color = success if msg[0] == 'success' else error
-    system('cls')
+    color = success if msg[0] == 'success' else '\n\n' + error
     print(parag + color + msg[1] + reset)
     
 def executing(label):
-    system('cls')
     print(parag + detail + f'Inserting {label}...' + reset)
 
 def commandline():
@@ -34,12 +30,12 @@ def commandline():
 
     if option[0] == 'movies':
         
-        movies = option[1].split('; ')
+        movies = option[1].split(';')
         
         executing('movies')
         
-        from Movies import Movies
-        msg = Movies(driver).movie_infos(movies)
+        from movies import Movies
+        msg = Movies().movie_infos(movies)
         
         message(msg)
         
@@ -73,11 +69,11 @@ def commandline():
         
         message(msg)
         
-    if option[0] == 'clear': system('cls')
+    if option[0] == 'clear': system('clear')
     
     if option[0] == 'exit': return
     
-    driver.switch_to.window(driver.window_handles[0])
+    sc.tab(0, 'select')
         
     commandline()
 
