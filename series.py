@@ -120,8 +120,6 @@ class Series:
         
         try:
             
-            
-
             if sc.tab('count') == 1:
                 self.platform_login()
             

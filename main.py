@@ -57,7 +57,7 @@ def commandline():
         query = option[1].split(' % ')
 
         serie = query[0]
-        season = query[1].split(' ')
+        season = query[1]
 
         executing('episodes')
         

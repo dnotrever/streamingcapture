@@ -127,6 +127,16 @@ class Episodes:
                 self.platform_login()
 
             sc.tab(0, 'select')
+            
+            if season_value != 'all':
+            
+                ## Get Serie Search
+                serie_query = re.sub(r'[^a-z0-9 ]', '', serie_title.lower()).replace(' ', '%20')
+                sc.get('https://www.imdb.com/find/?q=' + serie_query + '&ref_=nv_sr_sm')
+            
+                ## Select Serie Title
+                search_serie_title = sc.element('selector', 'section[data-testid="find-results-section-title"]')
+                sc.element('class', 'find-title-result', 'one', search_serie_title).click()
 
             serie_code = sc.current_url().split('/')[4]
 
@@ -140,7 +150,8 @@ class Episodes:
                 
                 sc.get(f'https://www.imdb.com/title/' + serie_code + '/episodes?season=' + season_value)
                 
-                episodes = sc.element('selector', 'div[itemprop="episodes"]')
+                season_list  = sc.element('class', 'jPRxOq')
+                episodes = sc.element('class', 'bGxjcH', 'all', season_list)
                 
                 for episode in episodes:
                     
@@ -151,11 +162,11 @@ class Episodes:
                     episode_number += 1
 
                     ## Title
-                    episode_title = sc.element('selector', 'a[itemprop="name"]', 'one', episode).text
+                    episode_title = (sc.element('class', 'bglHll', 'one', episode).text).split(' ∙ ')[1]
                     
                     ## Release
-                    episode_release = sc.element('class', 'airdate', 'one', episode).text
-                    release_format = datetime.strptime(episode_release.replace('.', ''), "%d %b %Y").strftime("%d/%m/%Y")
+                    episode_release = sc.element('class', 'jEHgCG', 'one', episode).text
+                    release_format = datetime.strptime(episode_release, "%a, %b %d, %Y").strftime("%d/%m/%Y")
 
                     ## Video
                     episode_video = self.get_episode_video(serie_code, season_value, episode_number)
