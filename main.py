@@ -2,6 +2,8 @@ from os import system
 
 from selenium_core import sc
 
+sc.set_driver()
+
 system('clear')
 
 messageColors = {
@@ -45,8 +47,8 @@ def commandline():
         
         executing('series')
         
-        from Series import Series
-        msg = Series(driver).serie_infos(series)
+        from series import Series
+        msg = Series().serie_infos(series)
 
         message(msg)
 
@@ -64,8 +66,8 @@ def commandline():
 
         executing('episodes')
         
-        from Episodes import Episodes
-        msg = Episodes(driver).episodes_infos(serie, season[0], default_source)
+        from episodes import Episodes
+        msg = Episodes().episodes_infos(serie, season[0], default_source)
         
         message(msg)
         

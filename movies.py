@@ -164,8 +164,6 @@ class Movies:
     def movie_infos(self, movies):
         
         try:
-        
-            sc.set_driver()
 
             if sc.tab('count') == 1:
                 self.platform_login()
@@ -233,9 +231,6 @@ class Movies:
                 for production in productions_names:
                     movie_infos['production'].append(production.text)
 
-                # self.driver.switch_to.window(self.driver.window_handles[1])
-                # self.driver.execute_script("window.open('');")
-                
                 sc.tab(1, 'select')
 
                 movie_video, alternative_video = self.get_movie_video(movie_title, movie_code)
