@@ -138,7 +138,7 @@ class Episodes:
                 
                 episode_number = 0
                 
-                self.driver.get(f'https://www.imdb.com/title/' + serie_code + '/episodes?season=' + season_value)
+                sc.get(f'https://www.imdb.com/title/' + serie_code + '/episodes?season=' + season_value)
                 
                 episodes = sc.element('selector', 'div[itemprop="episodes"]')
                 
@@ -158,7 +158,7 @@ class Episodes:
                     release_format = datetime.strptime(episode_release.replace('.', ''), "%d %b %Y").strftime("%d/%m/%Y")
 
                     ## Video
-                    episode_video = default_source_url(season_value, episode_number) if default_source else self.get_episode_video(serie_code, season_value, episode_number)
+                    episode_video = self.get_episode_video(serie_code, season_value, episode_number)
 
                     episodes_infos['number'] = episode_number
                     episodes_infos['title'] = episode_title
@@ -167,13 +167,7 @@ class Episodes:
                     
                     episodes_list.append(episodes_infos)
 
-                if not default_source:
-                    sc.close()
-
                 df_episodes = self.dataframe_create(episodes_list)
-
-                if default_source:
-                    sc.tab(1, 'select')
 
                 self.episodes_insert(serie_url, season_value, df_episodes)
             

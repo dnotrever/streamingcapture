@@ -59,15 +59,10 @@ def commandline():
         serie = query[0]
         season = query[1].split(' ')
 
-        try:
-            if season[1].lower() == 'y': default_source = True
-        except:
-            default_source = False
-
         executing('episodes')
         
         from episodes import Episodes
-        msg = Episodes().episodes_infos(serie, season[0], default_source)
+        msg = Episodes().episodes_infos(serie, season[0])
         
         message(msg)
         
