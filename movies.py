@@ -52,7 +52,6 @@ class Movies:
         sc.tab(2)
 
         video = self.source_1_movies + movie_code
-        alternative = ''
 
         movie = self.roman_to_integer(movie)
 
@@ -94,15 +93,24 @@ class Movies:
 
         return video, alternative
 
-    def get_movie_cover(self, movie):
+    def get_movie_cover(self, movie_title):
 
-        movie_query = re.sub(r'[^\w]+', '-', movie.lower())
+        movie_query = re.sub(r'[^\w]+', '-', movie_title.lower())
 
         sc.get('https://www.themoviedb.org/search/movie?query=' + movie_query)
-
-        ## Getting Cover
-        cover_url = sc.element('xpath', '/html/body/div[1]/main/section/div/div/div[2]/section/div[1]/div/div[1]/div/div[1]/div/a/img').get_attribute('src')
-        movie_cover = cover_url.split('/')[6]
+        
+        movie_list = sc.element('class', 'card', 'all')
+        
+        for movie in movie_list:
+            
+            title = movie.text.split('\n')[0]
+            
+            if title == movie_title:
+                
+                cover_url = sc.element('tag', 'img', 'one', movie).get_attribute('src')
+                movie_cover = cover_url.split('/')[6]
+                
+                break
 
         sc.close()
 
@@ -230,12 +238,20 @@ class Movies:
                 productions_names = sc.element('class', 'ipc-metadata-list-item__list-content-item', 'all', movie_productions)
                 for production in productions_names:
                     movie_infos['production'].append(production.text)
+                    
+                    movie_video = alternative_video = ''
+                
+                if datetime.strptime(release_date, "%B %d, %Y") < datetime.today():
 
-                sc.tab(1, 'select')
+                    sc.tab(1, 'select')
 
-                movie_video, alternative_video = self.get_movie_video(movie_title, movie_code)
+                    movie_video, alternative_video = self.get_movie_video(movie_title, movie_code)
 
-                sc.tab(2, 'select')
+                    sc.tab(2, 'select')
+                    
+                else:
+                    
+                    sc.tab(2)
 
                 movie_cover = self.get_movie_cover(movie_title)
 
@@ -255,3 +271,7 @@ class Movies:
             
             return ['error', traceback_formatted(traceback.format_exc())]
 
+
+# sc.set_driver()
+# test = Movies()
+# test.get_movie_cover('The Marvels')
